@@ -9,9 +9,9 @@ import (
 func main() {
 	c := config.NewConfig()
 
-	logging.LogSetup(c.AppConfig.LogLevel)
+	logging.LogSetup(c.LogLevel)
 
 	appl := app.New(c)
 
-	appl.Start()
+	appl.Run()
 }

@@ -7,34 +7,18 @@ import (
 )
 
 type Config struct {
-	AppConfig  AppConfig
-	RepoConfig RepoConfig
-}
-
-type AppConfig struct {
 	Host     string
 	Port     string
 	LogLevel string
 	NumCPUs  int
 }
 
-type RepoConfig struct {
-	Host string
-	Port string
-}
-
 func NewConfig() *Config {
 	return &Config{
-		AppConfig: AppConfig{
-			Host:     getEnv("APP_HOST", "0.0.0.0"),
-			Port:     getEnv("APP_PORT", "9050"),
-			LogLevel: getEnv("APP_LOG_LEVEL", "debug"),
-			NumCPUs:  getEnvInt("APP_NUMCPUs", -1),
-		},
-		RepoConfig: RepoConfig{
-			Host: getEnv("REPO_HOST", "0.0.0.0"),
-			Port: getEnv("REPO_PORT", "9010"),
-		},
+		Host:     getEnv("APP_HOST", "0.0.0.0"),
+		Port:     getEnv("APP_PORT", "9050"),
+		LogLevel: getEnv("APP_LOG_LEVEL", "debug"),
+		NumCPUs:  getEnvInt("APP_NUMCPUs", -1),
 	}
 }
 

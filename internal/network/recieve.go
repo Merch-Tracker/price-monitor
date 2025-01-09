@@ -35,14 +35,17 @@ func GetMerch(ctx context.Context, client pb.PriceWatcherClient) []Merch {
 			return nil
 		}
 
-		merchList = append(merchList, Merch{
+		newEntry := Merch{
 			MerchUuid:      response.MerchUuid,
 			Link:           response.Link,
 			ParseTag:       response.ParseTag,
 			ParseSubstring: response.ParseSubs,
 			CookieValues:   response.CookieValues,
 			Separator:      response.Separator,
-		})
+		}
+
+		merchList = append(merchList, newEntry)
+		log.WithField("entry added", newEntry).Debug("gRPC Receive")
 	}
 	return merchList
 }

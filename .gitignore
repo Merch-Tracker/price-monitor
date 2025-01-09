@@ -1,1 +1,3 @@
 .idea
+cmd/build.sh
+cmd/parserService

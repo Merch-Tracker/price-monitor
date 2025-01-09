@@ -14,8 +14,9 @@ import (
 )
 
 type App struct {
-	Address string
-	NumCPUs int
+	Address     string
+	NumCPUs     int
+	CheckPeriod time.Duration
 }
 
 func New(c *config.Config) *App {
@@ -25,8 +26,9 @@ func New(c *config.Config) *App {
 	}
 
 	return &App{
-		Address: c.Host + ":" + c.Port,
-		NumCPUs: numCPUs,
+		Address:     c.Host + ":" + c.Port,
+		NumCPUs:     numCPUs,
+		CheckPeriod: time.Duration(c.CheckPeriod),
 	}
 }
 
@@ -56,12 +58,13 @@ func (app *App) Run() {
 		for {
 			log.Info("Requesting data for parsing")
 			receiveData := network.GetMerch(ctx, client)
+			log.WithField("length", len(receiveData)).Debug("End receiving")
 			if receiveData != nil {
 				for _, element := range receiveData {
 					receiver <- element
 				}
 			}
-			time.Sleep(time.Hour * 1)
+			time.Sleep(time.Hour * app.CheckPeriod)
 		}
 	}()
 
@@ -77,7 +80,9 @@ func (app *App) Run() {
 				case element := <-sender:
 					sendData = append(sendData, element)
 				case <-ticker.C:
-					if len(sendData) > 0 {
+					l := len(sendData)
+					if l > 0 {
+						log.WithField("length", l).Debug("Sending parsed data")
 						network.PostMerch(client, sendData)
 						sendData = sendData[:0]
 					}

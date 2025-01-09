@@ -7,18 +7,20 @@ import (
 )
 
 type Config struct {
-	Host     string
-	Port     string
-	LogLevel string
-	NumCPUs  int
+	Host        string
+	Port        string
+	LogLevel    string
+	NumCPUs     int
+	CheckPeriod int
 }
 
 func NewConfig() *Config {
 	return &Config{
-		Host:     getEnv("APP_HOST", "0.0.0.0"),
-		Port:     getEnv("APP_PORT", "9050"),
-		LogLevel: getEnv("APP_LOG_LEVEL", "debug"),
-		NumCPUs:  getEnvInt("APP_NUMCPUs", -1),
+		Host:        getEnv("APP_HOST", "0.0.0.0"),
+		Port:        getEnv("APP_PORT", "9050"),
+		LogLevel:    getEnv("APP_LOG_LEVEL", "debug"),
+		NumCPUs:     getEnvInt("APP_NUMCPUs", -1),
+		CheckPeriod: getEnvInt("APP_CHECK_PERIOD", 6),
 	}
 }
 

@@ -71,3 +71,11 @@ func findMinimal(data []string, sep string) int {
 	}
 	return price
 }
+
+func makeSymbolsList(symbols string) []string {
+	var sep []string
+	for _, r := range []rune(symbols) {
+		sep = append(sep, string(r))
+	}
+	return sep
+}

@@ -19,7 +19,7 @@ func NewConfig() *Config {
 		Host:        getEnv("APP_HOST", "0.0.0.0"),
 		Port:        getEnv("APP_PORT", "9050"),
 		LogLevel:    getEnv("APP_LOG_LEVEL", "debug"),
-		NumCPUs:     getEnvInt("APP_NUMCPUs", -1),
+		NumCPUs:     getEnvInt("APP_NUMCPUS", -1),
 		CheckPeriod: getEnvInt("APP_CHECK_PERIOD", 6),
 	}
 }

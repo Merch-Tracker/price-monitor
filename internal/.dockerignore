@@ -1,0 +1,6 @@
+.idea
+.git
+.gitignore
+config.env
+cmd/build.sh
+cmd/parserService

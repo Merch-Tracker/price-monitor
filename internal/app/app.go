@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"net"
 	"parsing-service/config"
 	"parsing-service/internal/network"
 	"parsing-service/internal/parser"
@@ -13,10 +14,21 @@ import (
 	"time"
 )
 
+var LastCheck uint64
+
+type server struct {
+	pb.UnimplementedPriceWatcherServer
+	CheckPeriod uint32
+	NumCPUs     uint32
+	StartTime   uint64
+}
+
 type App struct {
-	Address     string
-	NumCPUs     int
-	CheckPeriod time.Duration
+	ClientAddress string
+	ServerAddress string
+	NumCPUs       int
+	CheckPeriod   time.Duration
+	StartTime     time.Time
 }
 
 func New(c *config.Config) *App {
@@ -26,16 +38,18 @@ func New(c *config.Config) *App {
 	}
 
 	return &App{
-		Address:     c.Host + ":" + c.Port,
-		NumCPUs:     numCPUs,
-		CheckPeriod: time.Duration(c.CheckPeriod),
+		ClientAddress: c.Host + ":" + c.ClientPort,
+		ServerAddress: c.Host + ":" + c.ServerPort,
+		NumCPUs:       numCPUs,
+		CheckPeriod:   time.Duration(c.CheckPeriod),
+		StartTime:     time.Now(),
 	}
 }
 
 func (app *App) Run() {
 	log.Info("Application start")
 	log.WithFields(log.Fields{
-		"Address":        app.Address,
+		"ClientAddress":  app.ClientAddress,
 		"Number of CPUs": app.NumCPUs,
 	}).Debug("App settings")
 
@@ -44,16 +58,25 @@ func (app *App) Run() {
 	insec := grpc.WithTransportCredentials(insecure.NewCredentials())
 	opts = append(opts, insec)
 
-	conn, err := grpc.NewClient(app.Address, opts...)
+	conn, err := grpc.NewClient(app.ClientAddress, opts...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	client := pb.NewPriceWatcherClient(conn)
 
+	s := grpc.NewServer()
+	sv := &server{
+		CheckPeriod: uint32(app.CheckPeriod),
+		NumCPUs:     uint32(app.NumCPUs),
+		StartTime:   uint64(app.StartTime.Unix()),
+	}
+	pb.RegisterPriceWatcherServer(s, sv)
+
 	receiver := make(chan network.Merch, app.NumCPUs*10)
 	sender := make(chan network.MerchResp, app.NumCPUs*10)
 
+	//request data for parsing
 	go func() {
 		for {
 			log.Info("Requesting data for parsing")
@@ -64,10 +87,12 @@ func (app *App) Run() {
 					receiver <- element
 				}
 			}
+			LastCheck = uint64(time.Now().Unix())
 			time.Sleep(time.Hour * app.CheckPeriod)
 		}
 	}()
 
+	// send parsed data
 	go func() {
 		ticker := time.NewTicker(time.Second * 2)
 		defer ticker.Stop()
@@ -96,5 +121,28 @@ func (app *App) Run() {
 		go parser.ProcessData(receiver, sender)
 	}
 
+	//gRPC server for status response
+	go func() {
+		listener, err := net.Listen("tcp", app.ServerAddress)
+		if err != nil {
+			log.Fatalf("failed to listen: %v", err)
+		}
+
+		log.Infof("gRPC server listening at %v", app.ServerAddress)
+		if err := s.Serve(listener); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
 	select {}
+}
+
+func (s *server) ParserInfo(ctx context.Context, req *pb.StatusRequest) (*pb.StatusResponse, error) {
+	resp := &pb.StatusResponse{
+		CheckPeriod: s.CheckPeriod,
+		NumCpus:     s.NumCPUs,
+		StartTime:   s.StartTime,
+		LastCheck:   LastCheck,
+	}
+	return resp, nil
 }

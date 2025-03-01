@@ -5,6 +5,8 @@ import (
 	"parsing-service/internal/network"
 )
 
+const zeroPrice = 0 //for debug purposes
+
 func ProcessData(in <-chan network.Merch, out chan<- network.MerchResp) {
 	for job := range in {
 		log.Debugf("Processing job: %s", job)
@@ -17,7 +19,7 @@ func ProcessData(in <-chan network.Merch, out chan<- network.MerchResp) {
 		page, err := getPage(job.Link, job.CookieValues)
 		if err != nil {
 			log.WithField("err", err).Error("Parsing | Can't get page")
-			sendPrice(out, job.MerchUuid, 0)
+			sendPrice(out, job.MerchUuid, zeroPrice)
 			continue
 		}
 		log.WithField("Page fetched", page != nil).Debug("Parsing | Step 1")
@@ -31,7 +33,7 @@ func ProcessData(in <-chan network.Merch, out chan<- network.MerchResp) {
 
 		if len(data) == 0 {
 			log.Debug("Parsing | No data")
-			sendPrice(out, job.MerchUuid, 0)
+			sendPrice(out, job.MerchUuid, zeroPrice)
 			continue
 		}
 		log.WithField("find data", len(data)).Debug("Parsing | Step 2")
@@ -44,7 +46,7 @@ func ProcessData(in <-chan network.Merch, out chan<- network.MerchResp) {
 			sendPrice(out, job.MerchUuid, price)
 		} else {
 			log.Debug("Price is not > 0, sending zero price")
-			sendPrice(out, job.MerchUuid, 0)
+			sendPrice(out, job.MerchUuid, zeroPrice)
 		}
 		log.WithField("price", price).Debug("Parsing | Step 4 END")
 	}

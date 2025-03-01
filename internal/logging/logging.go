@@ -31,11 +31,5 @@ func LogSetup(lvl string) {
 		log.SetLevel(l)
 	}
 
-	file, err := os.OpenFile("/home/kaw/parserService/log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//log.SetOutput(os.Stdout)
-	log.SetOutput(file)
+	log.SetOutput(os.Stdout)
 }
